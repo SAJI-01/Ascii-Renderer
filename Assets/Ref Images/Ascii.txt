@@ -1,0 +1,9 @@
+ `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@
+ 
+ 
+ 
+ 
+ step 1: to create a pixel art, we have take a image and divide the dimensions of the image by resolution ascii text.
+ step 2: in our case, we divide by 8 and once we upscale the image, we get the pixel art equivalent to ascii text.
+ step 3: Relationship between the image and ascii text -> Relating luminance/ brightness of the pixel to specific ascii characters.
+ step 4: Quantize the luminance 

@@ -1,0 +1,74 @@
+using UnityEngine;
+using TMPro;
+
+public class AsciiRenderer : MonoBehaviour
+{
+    public ComputeShader asciiComputeShader;
+    public Texture2D inputTexture;
+    public TMP_Text outputText;  // Reference to TextMeshPro
+    public int asciiWidth = 80;
+
+    private RenderTexture renderTexture;
+
+    private readonly string asciiChars = "@%#*+=-:. ";  // ASCII lookup characters
+
+    void Start()
+    {
+        // Prepare textures and buffers
+        int texWidth = inputTexture.width;
+        int texHeight = inputTexture.height;
+
+        // Compute ASCII dimensions
+        int asciiHeight = Mathf.FloorToInt((float)texHeight / texWidth * asciiWidth);
+        
+        // Create buffers for ASCII output and colors
+        ComputeBuffer asciiBuffer = new ComputeBuffer(asciiWidth * asciiHeight, sizeof(uint));
+        ComputeBuffer colorBuffer = new ComputeBuffer(asciiWidth * asciiHeight, sizeof(float) * 4);
+
+        // Setup the compute shader
+        int kernelHandle = asciiComputeShader.FindKernel("CSMain");
+        asciiComputeShader.SetTexture(kernelHandle, "_InputTexture", inputTexture);
+        asciiComputeShader.SetBuffer(kernelHandle, "_OutputASCIIChars", asciiBuffer);
+        asciiComputeShader.SetBuffer(kernelHandle, "_OutputASCIIColors", colorBuffer);
+
+        // Set the ASCII lookup table
+        int[] asciiLookup = new int[asciiChars.Length];
+        for (int i = 0; i < asciiChars.Length; i++)
+        {
+            asciiLookup[i] = asciiChars[i];
+        }
+        ComputeBuffer asciiLookupBuffer = new ComputeBuffer(asciiLookup.Length, sizeof(int));
+        asciiLookupBuffer.SetData(asciiLookup);
+        asciiComputeShader.SetBuffer(kernelHandle, "_ASCIILookup", asciiLookupBuffer);
+
+        // Dispatch the compute shader
+        asciiComputeShader.Dispatch(kernelHandle, asciiWidth / 8, asciiHeight / 8, 1);
+
+        // Retrieve the results
+        uint[] asciiResults = new uint[asciiWidth * asciiHeight];
+        asciiBuffer.GetData(asciiResults);
+        
+        Color[] colorResults = new Color[asciiWidth * asciiHeight];
+        colorBuffer.GetData(colorResults);
+
+        // Build the ASCII text with colors
+        string resultText = "";
+        for (int y = 0; y < asciiHeight; y++)
+        {
+            for (int x = 0; x < asciiWidth; x++)
+            {
+                int index = y * asciiWidth + x;
+                char asciiChar = (char)asciiResults[index];
+
+                Color charColor = colorResults[index];
+                outputText.text += $"<color=#{ColorUtility.ToHtmlStringRGB(charColor)}>{asciiChar}</color>";
+            }
+            outputText.text += "\n";  // New line for each row
+        }
+
+        // Clean up
+        asciiBuffer.Dispose();
+        colorBuffer.Dispose();
+        asciiLookupBuffer.Dispose();
+    }
+}

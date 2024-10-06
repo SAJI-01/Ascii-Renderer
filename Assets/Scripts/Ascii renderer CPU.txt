@@ -1,0 +1,78 @@
+using System;
+using UnityEngine;
+using UnityEngine.Serialization;
+using UnityEngine.Windows.WebCam;
+
+
+public class AsciiRenderer : MonoBehaviour
+{
+    private const string density = " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@";
+    
+   // public WebCamTexture webCam;
+    public Texture2D image;
+    public ComputeShader computeShader;
+    private float charWidth;
+    private float charHeight;
+    private int startIndex;
+    private int charIndex;
+    
+    public enum textColorType
+    {
+        Colored,
+        Grayscale
+    }
+    public textColorType textType;
+
+
+    private void Update()
+    {
+        computeShader.SetTexture(0, "imageTexture", image);
+        
+    }
+
+    void OnGUI()
+    {
+        GUI.backgroundColor = Color.black;
+        var imageAspectRatio = (float)image.width / image.height;
+        var screenAspectRatio = (float)Screen.width / Screen.height;
+        if (imageAspectRatio > screenAspectRatio)
+        {
+            charWidth = (float)Screen.width / image.width;
+            charHeight = charWidth / imageAspectRatio;
+        }
+        else
+        {
+            charHeight = (float)Screen.height / image.height;
+            charWidth = charHeight * imageAspectRatio;
+        }
+        
+        Application.targetFrameRate = 10;
+        int charIndex = startIndex;
+        
+        Color[] pixels = image.GetPixels();
+        for (int y = 0; y < image.height; y++)
+        {
+            int flipY = image.height - y - 1; 
+            for (int x = 0; x < image.width; x++)
+            {
+                Color pixel = pixels[x + flipY * image.width];
+                var grayscale = pixel.grayscale;
+                
+                GUIStyle style = new GUIStyle();
+                style.fontSize = Mathf.CeilToInt(charWidth * 1.2f);
+                style.alignment = TextAnchor.MiddleCenter;
+                var normalTextColor = textType == textColorType.Colored? pixel : new Color(grayscale, grayscale, grayscale);
+                style.normal.textColor = normalTextColor;
+
+                Rect rect = new Rect(x * charWidth, y * charHeight, charWidth, charHeight);
+                var charToDisplay = density[charIndex % density.Length].ToString();
+                GUI.Label(rect, charToDisplay, style);
+                
+                charIndex++;
+            }
+        }
+
+        startIndex++; 
+    }
+
+}

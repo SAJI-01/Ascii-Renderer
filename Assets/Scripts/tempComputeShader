@@ -1,0 +1,39 @@
+// ASCIICompute.compute
+#pragma kernel CSMain
+
+// Input Texture
+Texture2D<float4> _InputTexture;
+
+// ASCII characters lookup
+StructuredBuffer<int> _ASCIILookup;
+
+// Output buffer for ASCII chars and color
+RWStructuredBuffer<uint> _OutputASCIIChars;
+RWStructuredBuffer<float4> _OutputASCIIColors;
+
+[numthreads(8, 8, 1)] // Number of threads per group
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // Get the texture size
+    uint width, height;
+    _InputTexture.GetDimensions(width, height);
+
+    // Bounds check
+    if (id.x >= width || id.y >= height)
+        return;
+
+    // Get the pixel color at current position
+    float4 pixelColor = _InputTexture[id.xy];
+
+    // Convert pixel to grayscale for ASCII brightness mapping
+    float brightness = dot(pixelColor.rgb, float3(0.299, 0.587, 0.114)); // Luminance formula
+
+    // Map brightness to an ASCII character (using a simple lookup)
+    int asciiIndex = (int)(brightness * (_ASCIILookup.Length - 1));
+    int asciiChar = _ASCIILookup[asciiIndex];
+
+    // Output the ASCII character and its color
+    uint index = id.y * width + id.x;
+    _OutputASCIIChars[index] = asciiChar;
+    _OutputASCIIColors[index] = pixelColor;
+}

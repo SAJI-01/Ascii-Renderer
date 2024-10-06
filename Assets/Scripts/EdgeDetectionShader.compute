@@ -1,0 +1,55 @@
+#pragma kernel CSMain
+
+// Texture input
+Texture2D<float4> _InputTexture;
+
+// Texture output
+RWTexture2D<float4> _OutputTexture;
+
+sampler samplerLinear;
+
+float4 Sobel(float2 texCoord)
+{
+    float4 color = 0;
+
+    // Sobel kernel for x and y gradients
+    float2 offset = 1.0 / _InputTexture.TexelSize;
+
+    float3 gx = 
+    {
+        -1,  0,  1,
+        -2,  0,  2,
+        -1,  0,  1
+    };
+
+    float3 gy = 
+    {
+        1,  2,  1,
+        0,  0,  0,
+       -1, -2, -1
+   };
+
+    // Calculate gradients
+    float Gx = 0.0;
+    float Gy = 0.0;
+
+    for (int y = -1; y <= 1; y++)
+    {
+        for (int x = -1; x <= 1; x++)
+        {
+            float4 sample = _InputTexture[texCoord + float2(x, y) * offset];
+            Gx += sample.r * gx[y + 1][x + 1];
+            Gy += sample.r * gy[y + 1][x + 1];
+        }
+    }
+
+    float G = sqrt(Gx * Gx + Gy * Gy);
+    return float4(G, G, G, 1.0); // Return grayscale value
+}
+
+[numthreads(16, 16, 1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    float2 texCoord = float2(id.xy) * _InputTexture.TexelSize;
+    _OutputTexture[id.xy] = Sobel(texCoord);
+}
