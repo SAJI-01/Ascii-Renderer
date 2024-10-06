@@ -811,12 +811,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a169d03eb02756248ac55512f38d788f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  image: {fileID: 2800000, guid: f90bc87cc84f1e246ae52fed3186c506, type: 3}
-  font: {fileID: 11400000, guid: f5222a5019c3971469c2dee12b4933ae, type: 2}
+  image: {fileID: 2800000, guid: 755eca5348aabeb4fa1882c48975713b, type: 3}
+  font: {fileID: 11400000, guid: dc36b3fdc14f47ebb36fd484a67e268a, type: 2}
   parentAsciiObject: {fileID: 967414286}
-  updateSpeed: 5
+  updateSpeed: 10
   sizeF: 10
-  dontCreateTextBrightVal: 0.3
+  dontCreateTextBrightVal: 0.05
   textType: 0
 --- !u!212 &1746910783
 SpriteRenderer:
