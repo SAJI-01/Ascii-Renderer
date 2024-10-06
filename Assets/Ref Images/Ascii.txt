@@ -6,4 +6,52 @@
  step 1: to create a pixel art, we have take a image and divide the dimensions of the image by resolution ascii text.
  step 2: in our case, we divide by 8 and once we upscale the image, we get the pixel art equivalent to ascii text.
  step 3: Relationship between the image and ascii text -> Relating luminance/ brightness of the pixel to specific ascii characters.
- step 4: Quantize the luminance 
+ step 4: Quantize the luminance to smaller set of possible values. this will let us how many ascii characters there are.
+ step 5: In case of 10 ascii characters, we have to take all the possible values of luminance and translate to one of the 10 values.
+ step 6: since luminance is value between 0 and 1, we can quantize down to 10 values by, floor(luminance * 10) / 10.
+ 
+ step 7: now our image been ready to be replaced with ascii text.
+ step 8: we need a texture that contains the text and we want our text to communicate luminance, so dark pixels - tiny symbols, bright pixels - large symbols.
+ ascii text:" .:coPO?@■"
+ 
+ step 9: we can pixel screen position mod by 8 to 
+ put in the 8x8 range of the ascii character size add the luminance to the horizontal texture coordinate to get the proper character.
+ formula: uv.x = p.x mod 8 / 8.0 + luminance, uv.y = p.y mod 8 / 8.0
+ step 10: now our basic ascii art is ready to be displayed.
+ 
+ [Edge Detection]
+ step 11: this is not enough, we need to add edge lines.
+ step 12: we should draw the edge lines with proper symbols that conforms to the contour of the image. 
+ flat edge lines: _ , Vertical edge lines: |, angled edge lines: /, \
+ step 13: There are many edge detection algorithms, like sobel, canny, difference of gaussian, etc. , 3D rendering (depth/normal difference), inverse Hull.
+ step 14: we can use the sobel filter which can detect the edges and also give the direction of the edge. because its an approximation of the gradient.
+ step 15: Gradient means in vector calculus, 
+ the gradient of a function is a vector field, where each vector points in the direction of greatest change.
+ G.x = |1  0 -1|, G.y = | 1  2  1| When convolved with the image, it gives the gradient vector for each pixel.
+       |2  0 -2|        | 0  0  0| 
+       |1  0 -1|        |-1 -2 -1|
+ step 16: G vector = <x,y>. since these are vector in 2d space, we can get the angle of the vector by atan2(y,x) [-pi, pi].,
+          which we can convert to θ = atan2(G.y, G.x)/pi * 0.5 + 0.5 to get the value between [0,1]
+ step 17: Now we will have the same problem that we had in luminance - there is lot more angle values than characters,
+           so we need again want to reduce the possible angle results to four values _ | / \.
+ step 18: Now we downScale the image to the size of ascii characters before, and use the quantized angle as texture coordinate for the edge ascii texture.
+ step 19: Now we have the edge lines in the image.
+ 
+ Using Gpu - To keep the downscaled edges cohesive as possible, we use compute shader.
+ Step 20: group size is 8x8 for 64 total threads same size as the ascii characters, so we dispatch enough groups to cover the full resolution edge data,
+          and our compute shader will decide if the tile should be counted as an edge in the downscaled output or not.
+ step 21: we can do this by having each thread determine which kind of edge its pixel is, and writing that to group shared memory, 
+          and then first thread of group would scan the group shared memory using the identified edge [ _ | / \] as an index for another array
+          and adding to that spot in the array.
+ step 22: we find the maximum value in that array and using that as the edge fills the downscaled edge pixel, 
+          add threshold so that the tile needs a certain amount of edge pixels within it to be counted as edge.
+          
+ [sobel filter -> Extracted edges] [Difference of Gaussian pre-process -> sobel]
+ our sobel filter is not detecting edge for details images, so convert it proper edge detection.
+ step 23: we have to threshold the magnitude of the gradient, if the high changes is detected, then it is edge otherwise not, 
+          this fixes the render but sobel filter is not meant to produce aesthetically pleasing edges, it meant to extract features for data analysis.
+ step 24: we can fix this by simple pre-processing effect - simple difference of gaussian filter, we can extract high frequency details of the image
+          and then run the sobel filter on that for the EDGES DETECTION DATA.
+ step 25: Now we all we have to do is layer the EDGES on top of the base Ascii pass.
+ 
+ 
