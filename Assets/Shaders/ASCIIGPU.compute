@@ -1,0 +1,35 @@
+#pragma kernel CSMain
+
+RWTexture2D<float4> Result;
+Texture2D<float4> InputTexture;
+uint2 Resolution;
+
+static const int ASCII_CHAR_COUNT = 10;
+static const float ASCII_LEVELS[ASCII_CHAR_COUNT] = {
+    0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9
+};
+
+float getLuminance(float3 color) {
+    return dot(color, float3(0.299, 0.587, 0.114));
+}
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    if (any(id.xy >= Resolution)) return;
+
+    float4 color = InputTexture[id.xy];
+    float luminance = getLuminance(color.rgb);
+    
+    int asciiIndex = 0;
+    for (int i = 0; i < ASCII_CHAR_COUNT; i++) {
+        if (luminance > ASCII_LEVELS[i]) {
+            asciiIndex = i;
+        } else {
+            break;
+        }
+    }
+    
+    float grayscale = (float)asciiIndex / (ASCII_CHAR_COUNT - 1);
+    Result[id.xy] = float4(grayscale, grayscale, grayscale, 1.0);
+}
